@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/xconstruct/go-pushbullet"
+	"github.com/eternal-flame-AD/go-pushbullet"
 )
 
 func locateDeviceWithClient(devicenot string, client *pushbullet.Client) (string, error) {

@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"strconv"
 
+	"github.com/eternal-flame-AD/go-pushbullet"
 	"github.com/olekukonko/tablewriter"
-	"github.com/xconstruct/go-pushbullet"
 )
 
 func ErrAndExit(err interface{}, code int) {
@@ -171,6 +172,28 @@ func main() {
 			fmt.Println("Success!")
 		default:
 			ErrAndExit("Push type unsupported", 2)
+		}
+	case "listen":
+		client := pushbullet.New(config.Key)
+		listener := client.Listen()
+		for {
+			select {
+			case push := <-listener.Push:
+				log.Printf("New %s from %s: %s\n%s\n", push.Type, push.SenderName, push.Title, push.Body)
+				switch push.Type {
+				case "note":
+				case "file":
+					fmt.Printf("File %s of type %s: %s\n", push.FileName, push.FileMIME, push.FileURL)
+				case "link":
+					fmt.Printf("Link: %s\n", push.URL)
+				}
+			case ephemeral := <-listener.Ephemeral:
+				log.Printf("New ephemeral of type %s received from %s@%s: %s\n", ephemeral.Type, ephemeral.PackageName, ephemeral.SourceUserIden, ephemeral.Message)
+			case device := <-listener.Device:
+				log.Printf("Device %s updated\n", device.Nickname)
+			case err := <-listener.Error:
+				log.Printf("An error occured: %s", err.Error())
+			}
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "Invalid subcommand: %s\n", subcommand)
